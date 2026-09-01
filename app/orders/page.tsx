@@ -1,5 +1,4 @@
-import { env } from "cloudflare:workers";
-import { requireChatGPTUser } from "@/app/chatgpt-auth";
+import { isOwner } from "@/app/lib/owner";
 import { db } from "@/app/lib/store";
 import { getActiveBatch } from "@/app/lib/store";
 import BatchControls from "./BatchControls";
@@ -7,9 +6,7 @@ import BatchControls from "./BatchControls";
 export const dynamic="force-dynamic";
 
 export default async function Orders(){
- const user=await requireChatGPTUser("/orders");
- const admin=(env as unknown as Record<string,string|undefined>).ADMIN_EMAIL;
- if(!admin||user.email.toLowerCase()!==admin.toLowerCase()) return <main className="confirmation"><div className="confirmCard"><h1>Owner access only.</h1></div></main>;
+ if(!await isOwner()) return <main className="confirmation"><div className="confirmCard"><h1>Owner access required.</h1><p>Open this page through your protected shop address to sign in.</p></div></main>;
  const batch=await getActiveBatch();
  const cutoffLabel=new Date(batch.cutoff_at).toLocaleString("en-US",{timeZone:"America/New_York",weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"});
  const result=await db().prepare("SELECT order_number, customer_name, email, mobile, item_count, amount_cents, status, created_at FROM orders WHERE batch_id = ? ORDER BY created_at DESC").bind(batch.id).all<Record<string,string|number>>();

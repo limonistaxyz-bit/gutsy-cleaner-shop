@@ -20,6 +20,11 @@ export const orders = sqliteTable("orders", {
   itemCount: integer("item_count").notNull(),
   amountCents: integer("amount_cents").notNull(),
   status: text("status").notNull().default("pending_payment"),
+  squareOrderId: text("square_order_id").unique(),
+  squareLinkId: text("square_link_id"),
+  squareLinkUrl: text("square_link_url"),
+  squareRequestJson: text("square_request_json"),
+  paymentEnvironment: text("payment_environment"),
   stripeSessionId: text("stripe_session_id").unique(),
   reservationExpiresAt: integer("reservation_expires_at").notNull(),
   createdAt: integer("created_at").notNull(),
@@ -33,4 +38,10 @@ export const orderItems = sqliteTable("order_items", {
   productName: text("product_name").notNull(),
   quantity: integer("quantity").notNull(),
   unitPriceCents: integer("unit_price_cents").notNull(),
+});
+
+export const checkoutRateLimits = sqliteTable("checkout_rate_limits", {
+  key: text("key").primaryKey(),
+  windowStart: integer("window_start").notNull(),
+  count: integer("count").notNull(),
 });

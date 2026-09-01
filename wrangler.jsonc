@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "gutsy-cleaner-shop",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "keep_vars": true,
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "gutsy-cleaner-shop-db",
+    "migrations_dir": "drizzle"
+  }],
+  "triggers": {"crons": ["*/5 * * * *"]}
+}

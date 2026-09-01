@@ -1,3 +1,4 @@
+import { reconcilePending } from '../app/lib/reconcile';
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
@@ -26,6 +27,12 @@ interface ExecutionContext {
 // const imageConfig: ImageConfig = { dangerouslyAllowSVG: true };
 
 const worker = {
+  async scheduled(_event: unknown, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil((async () => {
+      await reconcilePending();
+      await env.DB.prepare('DELETE FROM checkout_rate_limits WHERE window_start < ?').bind(Math.floor(Date.now()/60000)-60).run();
+    })());
+  },
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
@@ -40,7 +47,12 @@ const worker = {
       }, allowedWidths);
     }
 
-    return handler.fetch(request, env, ctx);
+    const response = await handler.fetch(request, env, ctx);
+    const secured = new Response(response.body, response);
+    secured.headers.set('Referrer-Policy', 'no-referrer');
+    secured.headers.set('X-Content-Type-Options', 'nosniff');
+    if (url.pathname.startsWith('/orders') || url.pathname.startsWith('/api/') || url.pathname === '/order-confirmed') secured.headers.set('Cache-Control', 'no-store');
+    return secured;
   },
 };
 
